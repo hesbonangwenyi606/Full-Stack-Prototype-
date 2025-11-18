@@ -25,27 +25,31 @@ export default function UserDashboard() {
   const [transferToUserId, setTransferToUserId] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
 
+  // Load and auto-refresh data
   useEffect(() => {
-    if (activeUserId) refreshData(activeUserId);
-  }, [activeUserId]);
+    if (!activeUserId) return;
 
-  async function refreshData(userId) {
-    try {
-      setError("");
-      setLoadingData(true);
-      const [bal, txs] = await Promise.all([
-        getBalance(userId),
-        getTransactions(userId)
-      ]);
-      setBalance(bal);
-      setTransactions(txs.transactions || []);
-      setLastUpdated(new Date());
-    } catch (e) {
-      setError(e?.message || "Failed to load data");
-    } finally {
-      setLoadingData(false);
+    async function load() {
+      try {
+        setLoadingData(true);
+        const [bal, txs] = await Promise.all([
+          getBalance(activeUserId),
+          getTransactions(activeUserId)
+        ]);
+        setBalance(bal);
+        setTransactions(txs.transactions || []);
+        setLastUpdated(new Date());
+      } catch (e) {
+        setError(e?.message || "Failed to load data");
+      } finally {
+        setLoadingData(false);
+      }
     }
-  }
+
+    load(); // initial load
+    const intervalId = setInterval(load, 5000); // auto-refresh every 5 seconds
+    return () => clearInterval(intervalId);
+  }, [activeUserId]);
 
   async function handleCreateUser(e) {
     e.preventDefault();
@@ -73,7 +77,6 @@ export default function UserDashboard() {
     try {
       await deposit(activeUserId, parseFloat(depositAmount), "User deposit");
       setDepositAmount("");
-      await refreshData(activeUserId);
     } catch (e) {
       setError(e?.message || "Deposit failed");
     } finally {
@@ -95,7 +98,6 @@ export default function UserDashboard() {
       );
       setTransferAmount("");
       setTransferToUserId("");
-      await refreshData(activeUserId);
     } catch (e) {
       setError(e?.message || "Transfer failed");
     } finally {
@@ -111,7 +113,6 @@ export default function UserDashboard() {
     try {
       await withdraw(activeUserId, parseFloat(withdrawAmount), "User withdrawal");
       setWithdrawAmount("");
-      await refreshData(activeUserId);
     } catch (e) {
       setError(e?.message || "Withdrawal failed");
     } finally {
