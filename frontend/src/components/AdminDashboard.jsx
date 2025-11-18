@@ -36,14 +36,9 @@ export default function AdminDashboard() {
     }
   }
 
+  // Load data once on mount
   useEffect(() => {
-    let mounted = true;
-    const fetchData = async () => {
-      await load();
-      if (mounted) setTimeout(fetchData, 5000);
-    };
-    fetchData();
-    return () => { mounted = false; };
+    load();
   }, []);
 
   const typeBadge = (type) => {
