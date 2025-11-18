@@ -27,10 +27,8 @@ export default function UserDashboard() {
   const [transferToUserId, setTransferToUserId] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
 
-  // Auto-refresh user data
   useEffect(() => {
     if (!activeUserId) return;
-
     async function load() {
       try {
         setLoadingData(true);
@@ -47,13 +45,11 @@ export default function UserDashboard() {
         setLoadingData(false);
       }
     }
-
     load();
     const intervalId = setInterval(load, 5000);
     return () => clearInterval(intervalId);
   }, [activeUserId]);
 
-  // Toast helper
   const addToast = (message, type) => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -62,7 +58,6 @@ export default function UserDashboard() {
     }, 3000);
   };
 
-  // Full-screen overlay helper
   const showFullScreenMessage = (name, actionType) => {
     setFullScreenMessage({ name, actionType });
     setTimeout(() => setFullScreenMessage(null), 3000);
@@ -182,7 +177,6 @@ export default function UserDashboard() {
 
   return (
     <div className="layout-left">
-      {/* Full-screen overlay */}
       {fullScreenMessage && (
         <div
           className="fullscreen-overlay"
@@ -195,7 +189,6 @@ export default function UserDashboard() {
         </div>
       )}
 
-      {/* Toast notifications */}
       <div className="toast-container">
         {toasts.map((t) => (
           <div key={t.id} className="toast" style={{ backgroundColor: toastColor(t.type) }}>
@@ -204,7 +197,6 @@ export default function UserDashboard() {
         ))}
       </div>
 
-      {/* User selection / creation */}
       <div className="card">
         <h2>Select or Create User</h2>
         <div className="form-row">
@@ -244,7 +236,6 @@ export default function UserDashboard() {
         {error && <p style={{ color: "red", fontSize: 13 }}>{error}</p>}
       </div>
 
-      {/* Balance, actions, transactions */}
       {activeUserId && (
         <>
           <div className="card">
@@ -374,7 +365,6 @@ export default function UserDashboard() {
         </>
       )}
 
-      {/* CSS */}
       <style jsx>{`
         .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 500; color: white; }
@@ -400,13 +390,19 @@ export default function UserDashboard() {
           align-items: center;
           z-index: 99999;
           color: #fff;
-          animation: fadeIn 0.5s ease, fadeOut 0.5s ease 2.5s;
+          animation: fadeScaleIn 0.5s ease, fadeScaleOut 0.5s ease 2.5s;
         }
         .fullscreen-overlay .message { text-align: center; color: white; }
         .fullscreen-overlay h1 { font-size: 4rem; margin: 0; }
         .fullscreen-overlay p { font-size: 2rem; margin: 0; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes fadeScaleIn {
+          0% { opacity: 0; transform: translateY(-50px) scale(0.5); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes fadeScaleOut {
+          0% { opacity: 1; transform: scale(1); }
+          100% { opacity: 0; transform: scale(0.5); }
+        }
       `}</style>
     </div>
   );
