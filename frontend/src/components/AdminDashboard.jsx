@@ -1,4 +1,13 @@
 import React, { useEffect, useState, useMemo } from "react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer
+} from "recharts";
 import { getSummary, getActivity } from "../api";
 
 export default function AdminDashboard() {
@@ -15,7 +24,7 @@ export default function AdminDashboard() {
       setLoadingSummary(true);
       setLoadingActivity(true);
 
-      const [s, a] = await Promise.all([getSummary(), getActivity(20)]);
+      const [s, a] = await Promise.all([getSummary(), getActivity(50)]);
       setSummary(s);
       setActivity(a.transactions || []);
       setLastUpdated(new Date());
@@ -54,11 +63,59 @@ export default function AdminDashboard() {
   }
 
   const recentActivity = useMemo(() => {
-    return [...activity].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
+    return [...activity]
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+      .slice(0, 10);
+  }, [activity]);
+
+  // Prepare bar chart data: sum transactions by date
+  const chartData = useMemo(() => {
+    const map = {};
+    activity.forEach(t => {
+      const date = new Date(t.created_at).toLocaleDateString();
+      if (!map[date]) map[date] = 0;
+      map[date] += Number(t.amount); // ensure numeric
+    });
+    return Object.entries(map)
+      .map(([date, total]) => ({ date, total }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [activity]);
 
   return (
     <div className="layout-right">
+      {/* Bar Chart */}
+      <div className="card">
+        <h2>Transaction Trend</h2>
+        {loadingActivity ? (
+          <p>Loading chart...</p>
+        ) : chartData.length === 0 ? (
+          <p className="small-text">No transaction data to display.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12, fill: "#4b5563" }}
+                angle={-20}
+                textAnchor="end"
+                height={50}
+              />
+              <YAxis
+                tick={{ fontSize: 12, fill: "#4b5563" }}
+                tickFormatter={(value) => value.toLocaleString()}
+                width={60}
+              />
+              <Tooltip formatter={(value) => Number(value).toFixed(2)} />
+              <Bar dataKey="total" fill="#60a5fa" barSize={20} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
+
       {/* System Summary */}
       <div className="card">
         <h2>System Summary</h2>
@@ -118,7 +175,7 @@ export default function AdminDashboard() {
                     <td>{t.id}</td>
                     <td>{typeBadge(t.type)}</td>
                     <td>{statusBadge(t.status)}</td>
-                    <td>{t.amount.toFixed(2)}</td>
+                    <td>{Number(t.amount).toFixed(2)}</td>
                     <td>{t.from_user_id || "-"}</td>
                     <td>{t.to_user_id || "-"}</td>
                     <td>{new Date(t.created_at).toLocaleString()}</td>
@@ -143,7 +200,7 @@ export default function AdminDashboard() {
             {recentActivity.map((t) => (
               <li key={t.id}>
                 <strong>#{t.id}</strong> {t.type.toLowerCase()} of{" "}
-                {t.amount.toFixed(2)} from {t.from_user_id || "-"} to {t.to_user_id || "-"} at{" "}
+                {Number(t.amount).toFixed(2)} from {t.from_user_id || "-"} to {t.to_user_id || "-"} at{" "}
                 {new Date(t.created_at).toLocaleTimeString()}
               </li>
             ))}
@@ -174,74 +231,31 @@ export default function AdminDashboard() {
           font-weight: 500;
           color: white;
         }
-        .deposit {
-          background-color: #4ade80;
-        }
-        .transfer {
-          background-color: #60a5fa;
-        }
-        .withdraw {
-          background-color: #f87171;
-        }
-        .completed {
-          background-color: #4ade80;
-        }
-        .pending {
-          background-color: #facc15;
-        }
-        .failed {
-          background-color: #f87171;
-        }
+        .deposit { background-color: #4ade80; }
+        .transfer { background-color: #60a5fa; }
+        .withdraw { background-color: #f87171; }
+        .completed { background-color: #4ade80; }
+        .pending { background-color: #facc15; }
+        .failed { background-color: #f87171; }
 
-        .table-wrapper {
-          overflow-x: auto;
-        }
-        .table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .table th,
-        .table td {
+        .table-wrapper { overflow-x: auto; }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td {
           padding: 8px;
           border-bottom: 1px solid #e5e7eb;
           text-align: left;
           font-size: 13px;
         }
 
-        .activity-feed {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-          font-size: 13px;
-        }
-        .activity-feed li {
-          margin-bottom: 6px;
-        }
-
-        .small-text {
-          font-size: 13px;
-          color: #6b7280;
-        }
-
-        .error-text {
-          color: #ef4444;
-          font-size: 13px;
-        }
-
-        .last-updated {
-          font-size: 12px;
-          color: #6b7280;
-          margin-top: 6px;
-        }
+        .activity-feed { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+        .activity-feed li { margin-bottom: 6px; }
+        .small-text { font-size: 13px; color: #6b7280; }
+        .error-text { color: #ef4444; font-size: 13px; }
+        .last-updated { font-size: 12px; color: #6b7280; margin-top: 6px; }
 
         @media (max-width: 768px) {
-          .summary-grid {
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-          }
-          .table th,
-          .table td {
-            font-size: 12px;
-          }
+          .summary-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+          .table th, .table td { font-size: 12px; }
         }
       `}</style>
     </div>
