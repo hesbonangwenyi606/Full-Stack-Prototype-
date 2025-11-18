@@ -16,6 +16,7 @@ export default function UserDashboard() {
   const [loadingAction, setLoadingAction] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -38,6 +39,7 @@ export default function UserDashboard() {
       ]);
       setBalance(bal);
       setTransactions(txs.transactions || []);
+      setLastUpdated(new Date());
     } catch (e) {
       setError(e?.message || "Failed to load data");
     } finally {
@@ -175,9 +177,16 @@ export default function UserDashboard() {
             {loadingData ? (
               <div className="spinner" />
             ) : balance ? (
-              <p style={{ fontSize: 18, fontWeight: "bold" }}>
-                {balance.balance.toFixed(2)} {balance.currency} (User #{balance.user_id})
-              </p>
+              <>
+                <p style={{ fontSize: 18, fontWeight: "bold" }}>
+                  {balance.balance.toFixed(2)} {balance.currency} (User #{balance.user_id})
+                </p>
+                {lastUpdated && (
+                  <p style={{ fontSize: 12, color: "#6b7280" }}>
+                    Last updated: {lastUpdated.toLocaleTimeString()}
+                  </p>
+                )}
+              </>
             ) : (
               <p>Select a user to load balance.</p>
             )}
@@ -280,6 +289,11 @@ export default function UserDashboard() {
                   ))}
                 </tbody>
               </table>
+            )}
+            {lastUpdated && !loadingData && (
+              <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
             )}
           </div>
         </>
