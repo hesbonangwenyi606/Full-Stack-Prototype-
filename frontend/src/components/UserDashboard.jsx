@@ -58,8 +58,8 @@ export default function UserDashboard() {
     }, 3000);
   };
 
-  const showFullScreenMessage = (name, actionType) => {
-    setFullScreenMessage({ name, actionType });
+  const showFullScreenMessage = (name, actionType, amount = null) => {
+    setFullScreenMessage({ name, actionType, amount });
     setTimeout(() => setFullScreenMessage(null), 3000);
   };
 
@@ -99,11 +99,12 @@ export default function UserDashboard() {
     setError("");
     try {
       await deposit(activeUserId, parseFloat(depositAmount), "User deposit");
-      setDepositAmount("");
       showFullScreenMessage(
         users.find(u => u.id === activeUserId)?.name,
-        "Deposit Successful!"
+        "Deposit Successful!",
+        parseFloat(depositAmount)
       );
+      setDepositAmount("");
     } catch (e) {
       setError(e?.message || "Deposit failed");
     } finally {
@@ -123,12 +124,13 @@ export default function UserDashboard() {
         parseFloat(transferAmount),
         "Internal transfer"
       );
-      setTransferAmount("");
-      setTransferToUserId("");
       showFullScreenMessage(
         users.find(u => u.id === activeUserId)?.name,
-        "Transfer Successful!"
+        "Transfer Successful!",
+        parseFloat(transferAmount)
       );
+      setTransferAmount("");
+      setTransferToUserId("");
     } catch (e) {
       setError(e?.message || "Transfer failed");
     } finally {
@@ -143,11 +145,12 @@ export default function UserDashboard() {
     setError("");
     try {
       await withdraw(activeUserId, parseFloat(withdrawAmount), "User withdrawal");
-      setWithdrawAmount("");
       showFullScreenMessage(
         users.find(u => u.id === activeUserId)?.name,
-        "Withdrawal Successful!"
+        "Withdrawal Successful!",
+        parseFloat(withdrawAmount)
       );
+      setWithdrawAmount("");
     } catch (e) {
       setError(e?.message || "Withdrawal failed");
     } finally {
@@ -185,6 +188,11 @@ export default function UserDashboard() {
           <div className="message">
             <h1>{fullScreenMessage.name}</h1>
             <p>{fullScreenMessage.actionType}</p>
+            {fullScreenMessage.amount !== null && (
+              <p style={{ fontSize: "1.5rem", marginTop: "8px" }}>
+                Amount: {fullScreenMessage.amount.toFixed(2)}
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -197,6 +205,7 @@ export default function UserDashboard() {
         ))}
       </div>
 
+      {/* User selection / creation form */}
       <div className="card">
         <h2>Select or Create User</h2>
         <div className="form-row">
@@ -236,117 +245,57 @@ export default function UserDashboard() {
         {error && <p style={{ color: "red", fontSize: 13 }}>{error}</p>}
       </div>
 
+      {/* Actions, Balance, Transaction History */}
       {activeUserId && (
         <>
           <div className="card">
             <h2>Balance</h2>
-            {loadingData ? (
-              <div className="spinner" />
-            ) : balance ? (
+            {loadingData ? <div className="spinner" /> : balance ? (
               <>
                 <p style={{ fontSize: 18, fontWeight: "bold" }}>
                   {balance.balance.toFixed(2)} {balance.currency} (User #{balance.user_id})
                 </p>
-                {lastUpdated && (
-                  <p style={{ fontSize: 12, color: "#6b7280" }}>
-                    Last updated: {lastUpdated.toLocaleTimeString()}
-                  </p>
-                )}
+                {lastUpdated && <p style={{ fontSize: 12, color: "#6b7280" }}>Last updated: {lastUpdated.toLocaleTimeString()}</p>}
               </>
-            ) : (
-              <p>Select a user to load balance.</p>
-            )}
+            ) : <p>Select a user to load balance.</p>}
           </div>
 
           <div className="card">
             <h2>Actions</h2>
             <form onSubmit={handleDeposit}>
               <div className="form-row">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Deposit amount"
-                  value={depositAmount}
-                  onChange={(e) => setDepositAmount(e.target.value)}
-                  required
-                />
-                <button disabled={loadingAction}>
-                  {loadingAction ? <span className="spinner" /> : "Deposit"}
-                </button>
+                <input type="number" step="0.01" min="0" placeholder="Deposit amount" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} required />
+                <button disabled={loadingAction}>{loadingAction ? <span className="spinner" /> : "Deposit"}</button>
               </div>
             </form>
             <form onSubmit={handleTransfer}>
               <div className="form-row">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Transfer amount"
-                  value={transferAmount}
-                  onChange={(e) => setTransferAmount(e.target.value)}
-                  required
-                />
-                <input
-                  type="number"
-                  min="1"
-                  placeholder="To user ID"
-                  value={transferToUserId}
-                  onChange={(e) => setTransferToUserId(e.target.value)}
-                  required
-                />
-                <button disabled={loadingAction}>
-                  {loadingAction ? <span className="spinner" /> : "Transfer"}
-                </button>
+                <input type="number" step="0.01" min="0" placeholder="Transfer amount" value={transferAmount} onChange={(e) => setTransferAmount(e.target.value)} required />
+                <input type="number" min="1" placeholder="To user ID" value={transferToUserId} onChange={(e) => setTransferToUserId(e.target.value)} required />
+                <button disabled={loadingAction}>{loadingAction ? <span className="spinner" /> : "Transfer"}</button>
               </div>
             </form>
             <form onSubmit={handleWithdraw}>
               <div className="form-row">
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="Withdraw amount"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  required
-                />
-                <button disabled={loadingAction}>
-                  {loadingAction ? <span className="spinner" /> : "Withdraw"}
-                </button>
+                <input type="number" step="0.01" min="0" placeholder="Withdraw amount" value={withdrawAmount} onChange={(e) => setWithdrawAmount(e.target.value)} required />
+                <button disabled={loadingAction}>{loadingAction ? <span className="spinner" /> : "Withdraw"}</button>
               </div>
             </form>
           </div>
 
           <div className="card">
             <h2>Transaction History</h2>
-            {loadingData ? (
-              <div className="spinner" />
-            ) : transactions.length === 0 ? (
-              <p style={{ fontSize: 13 }}>No transactions yet.</p>
-            ) : (
+            {loadingData ? <div className="spinner" /> : transactions.length === 0 ? <p style={{ fontSize: 13 }}>No transactions yet.</p> : (
               <table className="table">
                 <thead>
-                  <tr>
-                    <th>ID</th>
-                    <th>Type</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>Time</th>
-                  </tr>
+                  <tr><th>ID</th><th>Type</th><th>Status</th><th>Amount</th><th>From</th><th>To</th><th>Time</th></tr>
                 </thead>
                 <tbody>
                   {transactions.map((t) => (
                     <tr key={t.id}>
                       <td>{t.id}</td>
                       <td>{typeBadge(t.type)}</td>
-                      <td>
-                        <span className={`badge ${t.status.toLowerCase()}`}>
-                          {t.status}
-                        </span>
-                      </td>
+                      <td><span className={`badge ${t.status.toLowerCase()}`}>{t.status}</span></td>
                       <td>{t.amount.toFixed(2)}</td>
                       <td>{t.from_user_id || "-"}</td>
                       <td>{t.to_user_id || "-"}</td>
@@ -356,11 +305,7 @@ export default function UserDashboard() {
                 </tbody>
               </table>
             )}
-            {lastUpdated && !loadingData && (
-              <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </p>
-            )}
+            {lastUpdated && !loadingData && <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>Last updated: {lastUpdated.toLocaleTimeString()}</p>}
           </div>
         </>
       )}
@@ -382,27 +327,16 @@ export default function UserDashboard() {
         @keyframes fadeOut { to { transform: translateX(300px); opacity: 0; } }
 
         .fullscreen-overlay {
-          position: fixed;
-          top: 0; left: 0;
-          width: 100vw; height: 100vh;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          z-index: 99999;
-          color: #fff;
+          position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+          display: flex; justify-content: center; align-items: center;
+          z-index: 99999; color: #fff;
           animation: fadeScaleIn 0.5s ease, fadeScaleOut 0.5s ease 2.5s;
         }
         .fullscreen-overlay .message { text-align: center; color: white; }
         .fullscreen-overlay h1 { font-size: 4rem; margin: 0; }
         .fullscreen-overlay p { font-size: 2rem; margin: 0; }
-        @keyframes fadeScaleIn {
-          0% { opacity: 0; transform: translateY(-50px) scale(0.5); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes fadeScaleOut {
-          0% { opacity: 1; transform: scale(1); }
-          100% { opacity: 0; transform: scale(0.5); }
-        }
+        @keyframes fadeScaleIn { 0% { opacity: 0; transform: translateY(-50px) scale(0.5); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes fadeScaleOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.5); } }
       `}</style>
     </div>
   );
