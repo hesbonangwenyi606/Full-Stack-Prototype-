@@ -17,8 +17,8 @@ export default function UserDashboard() {
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [toasts, setToasts] = useState([]); // array of { id, message, type }
-  const [fullScreenMessage, setFullScreenMessage] = useState(null); // full-screen overlay
+  const [toasts, setToasts] = useState([]);
+  const [fullScreenMessage, setFullScreenMessage] = useState(null);
 
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -62,10 +62,20 @@ export default function UserDashboard() {
     }, 3000);
   };
 
-  // Show full-screen success overlay
-  const showFullScreenMessage = (name) => {
-    setFullScreenMessage({ name });
+  // Full-screen overlay helper
+  const showFullScreenMessage = (name, actionType) => {
+    setFullScreenMessage({ name, actionType });
     setTimeout(() => setFullScreenMessage(null), 3000);
+  };
+
+  const overlayColor = (actionType) => {
+    switch (actionType) {
+      case "Deposit Successful!": return "#4ade80";
+      case "Transfer Successful!": return "#60a5fa";
+      case "Withdrawal Successful!": return "#f87171";
+      case "User Created Successfully!": return "#a78bfa";
+      default: return "#fff";
+    }
   };
 
   async function handleCreateUser(e) {
@@ -79,7 +89,7 @@ export default function UserDashboard() {
       setActiveUserId(user.id);
       setNewUserName("");
       setNewUserEmail("");
-      showFullScreenMessage(user.name); // show full-screen message
+      showFullScreenMessage(user.name, "User Created Successfully!");
     } catch (e) {
       setError(e?.message || "Failed to create user");
     } finally {
@@ -95,7 +105,10 @@ export default function UserDashboard() {
     try {
       await deposit(activeUserId, parseFloat(depositAmount), "User deposit");
       setDepositAmount("");
-      addToast(`Deposit successful!`, "deposit");
+      showFullScreenMessage(
+        users.find(u => u.id === activeUserId)?.name,
+        "Deposit Successful!"
+      );
     } catch (e) {
       setError(e?.message || "Deposit failed");
     } finally {
@@ -117,7 +130,10 @@ export default function UserDashboard() {
       );
       setTransferAmount("");
       setTransferToUserId("");
-      addToast(`Transfer successful!`, "transfer");
+      showFullScreenMessage(
+        users.find(u => u.id === activeUserId)?.name,
+        "Transfer Successful!"
+      );
     } catch (e) {
       setError(e?.message || "Transfer failed");
     } finally {
@@ -133,7 +149,10 @@ export default function UserDashboard() {
     try {
       await withdraw(activeUserId, parseFloat(withdrawAmount), "User withdrawal");
       setWithdrawAmount("");
-      addToast(`Withdrawal successful!`, "withdraw");
+      showFullScreenMessage(
+        users.find(u => u.id === activeUserId)?.name,
+        "Withdrawal Successful!"
+      );
     } catch (e) {
       setError(e?.message || "Withdrawal failed");
     } finally {
@@ -163,12 +182,15 @@ export default function UserDashboard() {
 
   return (
     <div className="layout-left">
-      {/* Full-screen success overlay */}
+      {/* Full-screen overlay */}
       {fullScreenMessage && (
-        <div className="fullscreen-overlay">
+        <div
+          className="fullscreen-overlay"
+          style={{ backgroundColor: overlayColor(fullScreenMessage.actionType) }}
+        >
           <div className="message">
             <h1>{fullScreenMessage.name}</h1>
-            <p>Successful!</p>
+            <p>{fullScreenMessage.actionType}</p>
           </div>
         </div>
       )}
@@ -364,18 +386,15 @@ export default function UserDashboard() {
         .spinner { width: 16px; height: 16px; border: 3px solid #ccc; border-top: 3px solid #333; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Toast container */
         .toast-container { position: fixed; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
         .toast { padding: 10px 16px; border-radius: 6px; color: white; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transform: translateX(300px); opacity: 0; animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
         @keyframes slideIn { to { transform: translateX(0); opacity: 0.95; } }
         @keyframes fadeOut { to { transform: translateX(300px); opacity: 0; } }
 
-        /* Full-screen overlay */
         .fullscreen-overlay {
           position: fixed;
           top: 0; left: 0;
           width: 100vw; height: 100vh;
-          background: rgba(0,0,0,0.85);
           display: flex;
           justify-content: center;
           align-items: center;
@@ -383,7 +402,7 @@ export default function UserDashboard() {
           color: #fff;
           animation: fadeIn 0.5s ease, fadeOut 0.5s ease 2.5s;
         }
-        .fullscreen-overlay .message { text-align: center; }
+        .fullscreen-overlay .message { text-align: center; color: white; }
         .fullscreen-overlay h1 { font-size: 4rem; margin: 0; }
         .fullscreen-overlay p { font-size: 2rem; margin: 0; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
