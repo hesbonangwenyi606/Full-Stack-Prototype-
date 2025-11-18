@@ -13,13 +13,12 @@ export default function UserDashboard() {
   const [activeUserId, setActiveUserId] = useState(null);
   const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState(false);
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState("");
 
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
-
   const [depositAmount, setDepositAmount] = useState("");
   const [transferAmount, setTransferAmount] = useState("");
   const [transferToUserId, setTransferToUserId] = useState("");
@@ -49,7 +48,7 @@ export default function UserDashboard() {
   async function handleCreateUser(e) {
     e.preventDefault();
     if (!newUserName) return;
-    setLoading(true);
+    setLoadingAction(true);
     setError("");
     try {
       const user = await createUser(newUserName, newUserEmail || null);
@@ -60,14 +59,14 @@ export default function UserDashboard() {
     } catch (e) {
       setError(e?.message || "Failed to create user");
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   }
 
   async function handleDeposit(e) {
     e.preventDefault();
     if (!activeUserId || !depositAmount) return;
-    setLoading(true);
+    setLoadingAction(true);
     setError("");
     try {
       await deposit(activeUserId, parseFloat(depositAmount), "User deposit");
@@ -76,14 +75,14 @@ export default function UserDashboard() {
     } catch (e) {
       setError(e?.message || "Deposit failed");
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   }
 
   async function handleTransfer(e) {
     e.preventDefault();
     if (!activeUserId || !transferAmount || !transferToUserId) return;
-    setLoading(true);
+    setLoadingAction(true);
     setError("");
     try {
       await transfer(
@@ -98,14 +97,14 @@ export default function UserDashboard() {
     } catch (e) {
       setError(e?.message || "Transfer failed");
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   }
 
   async function handleWithdraw(e) {
     e.preventDefault();
     if (!activeUserId || !withdrawAmount) return;
-    setLoading(true);
+    setLoadingAction(true);
     setError("");
     try {
       await withdraw(activeUserId, parseFloat(withdrawAmount), "User withdrawal");
@@ -114,7 +113,7 @@ export default function UserDashboard() {
     } catch (e) {
       setError(e?.message || "Withdrawal failed");
     } finally {
-      setLoading(false);
+      setLoadingAction(false);
     }
   }
 
@@ -161,7 +160,9 @@ export default function UserDashboard() {
               onChange={(e) => setNewUserEmail(e.target.value)}
               type="email"
             />
-            <button disabled={loading}>Create</button>
+            <button disabled={loadingAction}>
+              {loadingAction ? <span className="spinner" /> : "Create"}
+            </button>
           </div>
         </form>
         {error && <p style={{ color: "red", fontSize: 13 }}>{error}</p>}
@@ -172,7 +173,7 @@ export default function UserDashboard() {
           <div className="card">
             <h2>Balance</h2>
             {loadingData ? (
-              <p>Loading balance...</p>
+              <div className="spinner" />
             ) : balance ? (
               <p style={{ fontSize: 18, fontWeight: "bold" }}>
                 {balance.balance.toFixed(2)} {balance.currency} (User #{balance.user_id})
@@ -195,7 +196,9 @@ export default function UserDashboard() {
                   onChange={(e) => setDepositAmount(e.target.value)}
                   required
                 />
-                <button disabled={loading}>Deposit</button>
+                <button disabled={loadingAction}>
+                  {loadingAction ? <span className="spinner" /> : "Deposit"}
+                </button>
               </div>
             </form>
             <form onSubmit={handleTransfer}>
@@ -217,7 +220,9 @@ export default function UserDashboard() {
                   onChange={(e) => setTransferToUserId(e.target.value)}
                   required
                 />
-                <button disabled={loading}>Transfer</button>
+                <button disabled={loadingAction}>
+                  {loadingAction ? <span className="spinner" /> : "Transfer"}
+                </button>
               </div>
             </form>
             <form onSubmit={handleWithdraw}>
@@ -231,7 +236,9 @@ export default function UserDashboard() {
                   onChange={(e) => setWithdrawAmount(e.target.value)}
                   required
                 />
-                <button disabled={loading}>Withdraw</button>
+                <button disabled={loadingAction}>
+                  {loadingAction ? <span className="spinner" /> : "Withdraw"}
+                </button>
               </div>
             </form>
           </div>
@@ -239,7 +246,7 @@ export default function UserDashboard() {
           <div className="card">
             <h2>Transaction History</h2>
             {loadingData ? (
-              <p>Loading transactions...</p>
+              <div className="spinner" />
             ) : transactions.length === 0 ? (
               <p style={{ fontSize: 13 }}>No transactions yet.</p>
             ) : (
@@ -311,6 +318,19 @@ export default function UserDashboard() {
           border: 1px solid #ddd;
           font-size: 13px;
           text-align: left;
+        }
+        .spinner {
+          width: 16px;
+          height: 16px;
+          border: 3px solid #ccc;
+          border-top: 3px solid #333;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
+          display: inline-block;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </div>
