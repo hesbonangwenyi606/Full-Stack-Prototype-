@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  // Load summary and activity
   async function load() {
     try {
       setError("");
@@ -36,11 +37,19 @@ export default function AdminDashboard() {
     }
   }
 
-  // Load data once on mount
   useEffect(() => {
-    load();
+    let mounted = true;
+    const fetchData = async () => {
+      await load();
+      if (mounted) setTimeout(fetchData, 5000);
+    };
+    fetchData();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  // Badge helpers
   const typeBadge = (type) => {
     const klass =
       type === "DEPOSIT"
@@ -61,12 +70,14 @@ export default function AdminDashboard() {
     return <span className={klass}>{status}</span>;
   };
 
+  // Recent activity feed (last 10)
   const recentActivity = useMemo(() => {
     return [...activity]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 10);
   }, [activity]);
 
+  // Chart data grouped by date
   const chartData = useMemo(() => {
     const map = {};
     activity.forEach((t) => {
@@ -81,7 +92,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="layout-right">
-      {/* Bar Chart */}
+      {/* Transaction Trend */}
       <div className="card">
         <h2>Transaction Trend</h2>
         {loadingActivity ? (
@@ -89,39 +100,49 @@ export default function AdminDashboard() {
         ) : chartData.length === 0 ? (
           <p className="small-text">No transaction data to display.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart
+              data={chartData}
+              margin={{ top: 10, right: 10, left: 60, bottom: 40 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 12, fill: "#4b5563" }}
+                tick={{ fontSize: 10, fill: "#4b5563" }}
                 angle={-45}
                 textAnchor="end"
-                height={60}
+                height={50}
                 interval={0}
                 tickFormatter={(dateStr) => {
                   const d = new Date(dateStr);
-                  return `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`;
+                  return `${d.getDate()} ${d.toLocaleString("default", {
+                    month: "short",
+                  })} ${d.getFullYear()}`;
                 }}
               />
               <YAxis
-                tick={{ fontSize: 12, fill: "#4b5563" }}
+                tick={{ fontSize: 10, fill: "#4b5563" }}
                 tickFormatter={(value) => value.toLocaleString()}
-                width={60}
+                width={50}
               />
-              <Tooltip 
-                formatter={(value) => Number(value).toFixed(2)} 
+              <Tooltip
+                formatter={(value) => Number(value).toFixed(2)}
                 labelFormatter={(label) => {
                   const d = new Date(label);
-                  return d.toLocaleDateString('default', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+                  return d.toLocaleDateString("default", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  });
                 }}
               />
               <Bar
                 dataKey="total"
                 fill="#60a5fa"
-                barSize={20}
+                barSize={12}
                 isAnimationActive={true}
-                animationDuration={1500}
+                animationDuration={1000}
                 animationEasing="ease-out"
               />
             </BarChart>
@@ -199,7 +220,9 @@ export default function AdminDashboard() {
           </div>
         )}
         {lastUpdated && (
-          <p className="last-updated">Last updated: {lastUpdated.toLocaleTimeString()}</p>
+          <p className="last-updated">
+            Last updated: {lastUpdated.toLocaleTimeString()}
+          </p>
         )}
       </div>
 
@@ -216,7 +239,8 @@ export default function AdminDashboard() {
               <li key={t.id}>
                 <strong>#{t.id}</strong> {t.type.toLowerCase()} of{" "}
                 {Number(t.amount).toFixed(2)} from {t.from_user_id || "-"} to{" "}
-                {t.to_user_id || "-"} at {new Date(t.created_at).toLocaleTimeString()}
+                {t.to_user_id || "-"} at{" "}
+                {new Date(t.created_at).toLocaleTimeString()}
               </li>
             ))}
           </ul>
