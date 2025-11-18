@@ -18,6 +18,7 @@ export default function UserDashboard() {
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
   const [toasts, setToasts] = useState([]); // array of { id, message, type }
+  const [fullScreenMessage, setFullScreenMessage] = useState(null); // full-screen overlay
 
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -54,11 +55,17 @@ export default function UserDashboard() {
 
   // Toast helper
   const addToast = (message, type) => {
-    const id = Date.now() + Math.random(); // unique id
+    const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3000);
+  };
+
+  // Show full-screen success overlay
+  const showFullScreenMessage = (name) => {
+    setFullScreenMessage({ name });
+    setTimeout(() => setFullScreenMessage(null), 3000);
   };
 
   async function handleCreateUser(e) {
@@ -72,7 +79,7 @@ export default function UserDashboard() {
       setActiveUserId(user.id);
       setNewUserName("");
       setNewUserEmail("");
-      addToast(`User "${user.name}" created successfully!`, "create");
+      showFullScreenMessage(user.name); // show full-screen message
     } catch (e) {
       setError(e?.message || "Failed to create user");
     } finally {
@@ -156,6 +163,16 @@ export default function UserDashboard() {
 
   return (
     <div className="layout-left">
+      {/* Full-screen success overlay */}
+      {fullScreenMessage && (
+        <div className="fullscreen-overlay">
+          <div className="message">
+            <h1>{fullScreenMessage.name}</h1>
+            <p>Successful!</p>
+          </div>
+        </div>
+      )}
+
       {/* Toast notifications */}
       <div className="toast-container">
         {toasts.map((t) => (
@@ -205,7 +222,7 @@ export default function UserDashboard() {
         {error && <p style={{ color: "red", fontSize: 13 }}>{error}</p>}
       </div>
 
-      {/* Balance and actions */}
+      {/* Balance, actions, transactions */}
       {activeUserId && (
         <>
           <div className="card">
@@ -288,7 +305,6 @@ export default function UserDashboard() {
             </form>
           </div>
 
-          {/* Transactions */}
           <div className="card">
             <h2>Transaction History</h2>
             {loadingData ? (
@@ -353,6 +369,25 @@ export default function UserDashboard() {
         .toast { padding: 10px 16px; border-radius: 6px; color: white; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transform: translateX(300px); opacity: 0; animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
         @keyframes slideIn { to { transform: translateX(0); opacity: 0.95; } }
         @keyframes fadeOut { to { transform: translateX(300px); opacity: 0; } }
+
+        /* Full-screen overlay */
+        .fullscreen-overlay {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100vw; height: 100vh;
+          background: rgba(0,0,0,0.85);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 99999;
+          color: #fff;
+          animation: fadeIn 0.5s ease, fadeOut 0.5s ease 2.5s;
+        }
+        .fullscreen-overlay .message { text-align: center; }
+        .fullscreen-overlay h1 { font-size: 4rem; margin: 0; }
+        .fullscreen-overlay p { font-size: 2rem; margin: 0; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
       `}</style>
     </div>
   );
