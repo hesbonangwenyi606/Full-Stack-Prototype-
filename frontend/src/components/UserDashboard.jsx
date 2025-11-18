@@ -17,6 +17,7 @@ export default function UserDashboard() {
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [toast, setToast] = useState(""); // Toast message
 
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -47,9 +48,15 @@ export default function UserDashboard() {
     }
 
     load(); // initial load
-    const intervalId = setInterval(load, 5000); // auto-refresh every 5 seconds
+    const intervalId = setInterval(load, 5000); // auto-refresh every 5s
     return () => clearInterval(intervalId);
   }, [activeUserId]);
+
+  // Helper to show toast
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(""), 3000); // auto-hide after 3s
+  };
 
   async function handleCreateUser(e) {
     e.preventDefault();
@@ -62,6 +69,7 @@ export default function UserDashboard() {
       setActiveUserId(user.id);
       setNewUserName("");
       setNewUserEmail("");
+      showToast(`User "${user.name}" created successfully!`);
     } catch (e) {
       setError(e?.message || "Failed to create user");
     } finally {
@@ -77,6 +85,7 @@ export default function UserDashboard() {
     try {
       await deposit(activeUserId, parseFloat(depositAmount), "User deposit");
       setDepositAmount("");
+      showToast(`Deposit successful!`);
     } catch (e) {
       setError(e?.message || "Deposit failed");
     } finally {
@@ -98,6 +107,7 @@ export default function UserDashboard() {
       );
       setTransferAmount("");
       setTransferToUserId("");
+      showToast(`Transfer successful!`);
     } catch (e) {
       setError(e?.message || "Transfer failed");
     } finally {
@@ -113,6 +123,7 @@ export default function UserDashboard() {
     try {
       await withdraw(activeUserId, parseFloat(withdrawAmount), "User withdrawal");
       setWithdrawAmount("");
+      showToast(`Withdrawal successful!`);
     } catch (e) {
       setError(e?.message || "Withdrawal failed");
     } finally {
@@ -132,6 +143,9 @@ export default function UserDashboard() {
 
   return (
     <div className="layout-left">
+      {/* Toast notification */}
+      {toast && <div className="toast">{toast}</div>}
+
       <div className="card">
         <h2>Select or Create User</h2>
         <div className="form-row">
@@ -346,6 +360,18 @@ export default function UserDashboard() {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        .toast {
+          position: fixed;
+          top: 16px;
+          right: 16px;
+          background-color: #333;
+          color: white;
+          padding: 10px 16px;
+          border-radius: 6px;
+          font-size: 14px;
+          opacity: 0.9;
+          z-index: 9999;
         }
       `}</style>
     </div>
