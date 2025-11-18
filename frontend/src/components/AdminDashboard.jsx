@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { getSummary, getActivity } from "../api";
 
 export default function AdminDashboard() {
@@ -43,31 +43,46 @@ export default function AdminDashboard() {
     return <span className={klass}>{type}</span>;
   }
 
+  function statusBadge(status) {
+    const klass =
+      status.toLowerCase() === "completed"
+        ? "badge completed"
+        : status.toLowerCase() === "pending"
+        ? "badge pending"
+        : "badge failed";
+    return <span className={klass}>{status}</span>;
+  }
+
+  const recentActivity = useMemo(() => {
+    return [...activity].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
+  }, [activity]);
+
   return (
     <div className="layout-right">
+      {/* System Summary */}
       <div className="card">
         <h2>System Summary</h2>
-        {error && <p style={{ color: "red", fontSize: 13 }}>{error}</p>}
+        {error && <p className="error-text">{error}</p>}
         {loadingSummary ? (
           <p>Loading summary...</p>
         ) : summary ? (
           <div className="summary-grid">
-            <div>
-              <div className="label">Total users</div>
+            <div className="summary-item">
+              <div className="label">Total Users</div>
               <div className="value">{summary.total_users}</div>
             </div>
-            <div>
-              <div className="label">Total value in wallets</div>
+            <div className="summary-item">
+              <div className="label">Total Wallet Value</div>
               <div className="value">
                 {summary.total_value.toFixed(2)} {summary.currency}
               </div>
             </div>
-            <div>
-              <div className="label">Total transfers</div>
+            <div className="summary-item">
+              <div className="label">Total Transfers</div>
               <div className="value">{summary.total_transfers}</div>
             </div>
-            <div>
-              <div className="label">Total withdrawals</div>
+            <div className="summary-item">
+              <div className="label">Total Withdrawals</div>
               <div className="value">{summary.total_withdrawals}</div>
             </div>
           </div>
@@ -76,64 +91,59 @@ export default function AdminDashboard() {
         )}
       </div>
 
+      {/* Transactions Table */}
       <div className="card">
         <h2>Transactions</h2>
         {loadingActivity ? (
           <p>Loading transactions...</p>
         ) : activity.length === 0 ? (
-          <p style={{ fontSize: 13 }}>No transactions yet.</p>
+          <p className="small-text">No transactions yet.</p>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Type</th>
-                <th>Status</th>
-                <th>Amount</th>
-                <th>From</th>
-                <th>To</th>
-                <th>Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activity.map((t) => (
-                <tr key={t.id}>
-                  <td>{t.id}</td>
-                  <td>{typeBadge(t.type)}</td>
-                  <td>
-                    <span className={`badge ${t.status.toLowerCase()}`}>
-                      {t.status}
-                    </span>
-                  </td>
-                  <td>{t.amount.toFixed(2)}</td>
-                  <td>{t.from_user_id || "-"}</td>
-                  <td>{t.to_user_id || "-"}</td>
-                  <td>{new Date(t.created_at).toLocaleString()}</td>
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Time</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {activity.map((t) => (
+                  <tr key={t.id}>
+                    <td>{t.id}</td>
+                    <td>{typeBadge(t.type)}</td>
+                    <td>{statusBadge(t.status)}</td>
+                    <td>{t.amount.toFixed(2)}</td>
+                    <td>{t.from_user_id || "-"}</td>
+                    <td>{t.to_user_id || "-"}</td>
+                    <td>{new Date(t.created_at).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-        {lastUpdated && (
-          <p style={{ fontSize: 12, color: "#6b7280", marginTop: 6 }}>
-            Last updated: {lastUpdated.toLocaleTimeString()}
-          </p>
-        )}
+        {lastUpdated && <p className="last-updated">Last updated: {lastUpdated.toLocaleTimeString()}</p>}
       </div>
 
+      {/* Recent Activity Feed */}
       <div className="card">
         <h2>Recent Activity Feed</h2>
         {loadingActivity ? (
           <p>Loading activity feed...</p>
-        ) : activity.length === 0 ? (
-          <p style={{ fontSize: 13 }}>No activity yet.</p>
+        ) : recentActivity.length === 0 ? (
+          <p className="small-text">No activity yet.</p>
         ) : (
           <ul className="activity-feed">
-            {activity.slice(0, 10).map((t) => (
+            {recentActivity.map((t) => (
               <li key={t.id}>
                 <strong>#{t.id}</strong> {t.type.toLowerCase()} of{" "}
-                {t.amount.toFixed(2)} from {t.from_user_id || "-"} to{" "}
-                {t.to_user_id || "-"} at{" "}
+                {t.amount.toFixed(2)} from {t.from_user_id || "-"} to {t.to_user_id || "-"} at{" "}
                 {new Date(t.created_at).toLocaleTimeString()}
               </li>
             ))}
@@ -148,17 +158,18 @@ export default function AdminDashboard() {
           grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 16px;
         }
-        .label {
+        .summary-item .label {
           font-size: 12px;
           color: #6b7280;
         }
-        .value {
+        .summary-item .value {
           font-size: 18px;
           font-weight: bold;
         }
+
         .badge {
-          padding: 2px 6px;
-          border-radius: 4px;
+          padding: 4px 8px;
+          border-radius: 6px;
           font-size: 12px;
           font-weight: 500;
           color: white;
@@ -172,6 +183,31 @@ export default function AdminDashboard() {
         .withdraw {
           background-color: #f87171;
         }
+        .completed {
+          background-color: #4ade80;
+        }
+        .pending {
+          background-color: #facc15;
+        }
+        .failed {
+          background-color: #f87171;
+        }
+
+        .table-wrapper {
+          overflow-x: auto;
+        }
+        .table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .table th,
+        .table td {
+          padding: 8px;
+          border-bottom: 1px solid #e5e7eb;
+          text-align: left;
+          font-size: 13px;
+        }
+
         .activity-feed {
           list-style: none;
           padding: 0;
@@ -179,7 +215,33 @@ export default function AdminDashboard() {
           font-size: 13px;
         }
         .activity-feed li {
-          margin-bottom: 4px;
+          margin-bottom: 6px;
+        }
+
+        .small-text {
+          font-size: 13px;
+          color: #6b7280;
+        }
+
+        .error-text {
+          color: #ef4444;
+          font-size: 13px;
+        }
+
+        .last-updated {
+          font-size: 12px;
+          color: #6b7280;
+          margin-top: 6px;
+        }
+
+        @media (max-width: 768px) {
+          .summary-grid {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          }
+          .table th,
+          .table td {
+            font-size: 12px;
+          }
         }
       `}</style>
     </div>
