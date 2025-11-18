@@ -17,7 +17,7 @@ export default function UserDashboard() {
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [toast, setToast] = useState(""); // Toast message
+  const [toast, setToast] = useState(null); // { message, type }
 
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -26,7 +26,7 @@ export default function UserDashboard() {
   const [transferToUserId, setTransferToUserId] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
 
-  // Load and auto-refresh data
+  // Auto-refresh user data
   useEffect(() => {
     if (!activeUserId) return;
 
@@ -47,15 +47,15 @@ export default function UserDashboard() {
       }
     }
 
-    load(); // initial load
-    const intervalId = setInterval(load, 5000); // auto-refresh every 5s
+    load();
+    const intervalId = setInterval(load, 5000);
     return () => clearInterval(intervalId);
   }, [activeUserId]);
 
-  // Helper to show toast
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => setToast(""), 3000); // auto-hide after 3s
+  // Show color-coded toast
+  const showToast = (message, type) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
   async function handleCreateUser(e) {
@@ -69,7 +69,7 @@ export default function UserDashboard() {
       setActiveUserId(user.id);
       setNewUserName("");
       setNewUserEmail("");
-      showToast(`User "${user.name}" created successfully!`);
+      showToast(`User "${user.name}" created successfully!`, "create");
     } catch (e) {
       setError(e?.message || "Failed to create user");
     } finally {
@@ -85,7 +85,7 @@ export default function UserDashboard() {
     try {
       await deposit(activeUserId, parseFloat(depositAmount), "User deposit");
       setDepositAmount("");
-      showToast(`Deposit successful!`);
+      showToast(`Deposit successful!`, "deposit");
     } catch (e) {
       setError(e?.message || "Deposit failed");
     } finally {
@@ -107,7 +107,7 @@ export default function UserDashboard() {
       );
       setTransferAmount("");
       setTransferToUserId("");
-      showToast(`Transfer successful!`);
+      showToast(`Transfer successful!`, "transfer");
     } catch (e) {
       setError(e?.message || "Transfer failed");
     } finally {
@@ -123,7 +123,7 @@ export default function UserDashboard() {
     try {
       await withdraw(activeUserId, parseFloat(withdrawAmount), "User withdrawal");
       setWithdrawAmount("");
-      showToast(`Withdrawal successful!`);
+      showToast(`Withdrawal successful!`, "withdraw");
     } catch (e) {
       setError(e?.message || "Withdrawal failed");
     } finally {
@@ -141,10 +141,24 @@ export default function UserDashboard() {
     return <span className={klass}>{type}</span>;
   }
 
+  const toastColor = (type) => {
+    switch (type) {
+      case "deposit": return "#4ade80"; // green
+      case "transfer": return "#60a5fa"; // blue
+      case "withdraw": return "#f87171"; // red
+      case "create": return "#a78bfa"; // purple
+      default: return "#333";
+    }
+  };
+
   return (
     <div className="layout-left">
       {/* Toast notification */}
-      {toast && <div className="toast">{toast}</div>}
+      {toast && (
+        <div className="toast" style={{ backgroundColor: toastColor(toast.type) }}>
+          {toast.message}
+        </div>
+      )}
 
       <div className="card">
         <h2>Select or Create User</h2>
@@ -328,15 +342,9 @@ export default function UserDashboard() {
           font-weight: 500;
           color: white;
         }
-        .deposit {
-          background-color: #4ade80;
-        }
-        .transfer {
-          background-color: #60a5fa;
-        }
-        .withdraw {
-          background-color: #f87171;
-        }
+        .deposit { background-color: #4ade80; }
+        .transfer { background-color: #60a5fa; }
+        .withdraw { background-color: #f87171; }
         .table {
           width: 100%;
           border-collapse: collapse;
@@ -365,13 +373,13 @@ export default function UserDashboard() {
           position: fixed;
           top: 16px;
           right: 16px;
-          background-color: #333;
           color: white;
           padding: 10px 16px;
           border-radius: 6px;
           font-size: 14px;
-          opacity: 0.9;
+          opacity: 0.95;
           z-index: 9999;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         }
       `}</style>
     </div>
