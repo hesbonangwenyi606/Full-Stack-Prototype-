@@ -18,7 +18,6 @@ export default function AdminDashboard() {
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Load summary and activity
   async function load() {
     try {
       setError("");
@@ -49,7 +48,6 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  // Badge helpers
   const typeBadge = (type) => {
     const klass =
       type === "DEPOSIT"
@@ -70,14 +68,12 @@ export default function AdminDashboard() {
     return <span className={klass}>{status}</span>;
   };
 
-  // Recent activity feed (last 10)
   const recentActivity = useMemo(() => {
     return [...activity]
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
       .slice(0, 10);
   }, [activity]);
 
-  // Chart data grouped by date
   const chartData = useMemo(() => {
     const map = {};
     activity.forEach((t) => {
@@ -100,53 +96,55 @@ export default function AdminDashboard() {
         ) : chartData.length === 0 ? (
           <p className="small-text">No transaction data to display.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart
-              data={chartData}
-              margin={{ top: 10, right: 10, left: 60, bottom: 40 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10, fill: "#4b5563" }}
-                angle={-45}
-                textAnchor="end"
-                height={50}
-                interval={0}
-                tickFormatter={(dateStr) => {
-                  const d = new Date(dateStr);
-                  return `${d.getDate()} ${d.toLocaleString("default", {
-                    month: "short",
-                  })} ${d.getFullYear()}`;
-                }}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "#4b5563" }}
-                tickFormatter={(value) => value.toLocaleString()}
-                width={50}
-              />
-              <Tooltip
-                formatter={(value) => Number(value).toFixed(2)}
-                labelFormatter={(label) => {
-                  const d = new Date(label);
-                  return d.toLocaleDateString("default", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  });
-                }}
-              />
-              <Bar
-                dataKey="total"
-                fill="#60a5fa"
-                barSize={12}
-                isAnimationActive={true}
-                animationDuration={1000}
-                animationEasing="ease-out"
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="chart-wrapper">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart
+                data={chartData}
+                margin={{ top: 10, right: 10, left: 60, bottom: 40 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 10, fill: "#4b5563" }}
+                  angle={-45}
+                  textAnchor="end"
+                  height={50}
+                  interval={0}
+                  tickFormatter={(dateStr) => {
+                    const d = new Date(dateStr);
+                    return `${d.getDate()} ${d.toLocaleString("default", {
+                      month: "short",
+                    })} ${d.getFullYear()}`;
+                  }}
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "#4b5563" }}
+                  tickFormatter={(value) => value.toLocaleString()}
+                  width={50}
+                />
+                <Tooltip
+                  formatter={(value) => Number(value).toFixed(2)}
+                  labelFormatter={(label) => {
+                    const d = new Date(label);
+                    return d.toLocaleDateString("default", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    });
+                  }}
+                />
+                <Bar
+                  dataKey="total"
+                  fill="#60a5fa"
+                  barSize={12}
+                  isAnimationActive={true}
+                  animationDuration={1000}
+                  animationEasing="ease-out"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
 
@@ -190,7 +188,7 @@ export default function AdminDashboard() {
         ) : activity.length === 0 ? (
           <p className="small-text">No transactions yet.</p>
         ) : (
-          <div className="table-wrapper">
+          <div className="table-wrapper scrollable">
             <table className="table">
               <thead>
                 <tr>
@@ -247,7 +245,6 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* CSS */}
       <style jsx>{`
         .summary-grid {
           display: grid;
@@ -289,9 +286,15 @@ export default function AdminDashboard() {
         }
         .table-wrapper {
           overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+        }
+        .table-wrapper.scrollable {
+          scroll-behavior: smooth;
         }
         .table {
           width: 100%;
+          min-width: 600px;
           border-collapse: collapse;
         }
         .table th,
