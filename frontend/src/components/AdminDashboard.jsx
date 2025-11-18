@@ -103,6 +103,7 @@ export default function AdminDashboard() {
                 angle={-45}
                 textAnchor="end"
                 height={60}
+                interval={0}
               />
               <YAxis
                 tick={{ fontSize: 12, fill: "#4b5563" }}
@@ -110,7 +111,14 @@ export default function AdminDashboard() {
                 width={60}
               />
               <Tooltip formatter={(value) => Number(value).toFixed(2)} />
-              <Bar dataKey="total" fill="#60a5fa" barSize={20} />
+              <Bar
+                dataKey="total"
+                fill="#60a5fa"
+                barSize={20}
+                isAnimationActive={true}
+                animationDuration={1500}
+                animationEasing="ease-out"
+              />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -225,7 +233,6 @@ export default function AdminDashboard() {
           font-size: 18px;
           font-weight: bold;
         }
-
         .badge {
           padding: 4px 8px;
           border-radius: 6px;
@@ -251,7 +258,6 @@ export default function AdminDashboard() {
         .failed {
           background-color: #f87171;
         }
-
         .table-wrapper {
           overflow-x: auto;
         }
@@ -266,7 +272,6 @@ export default function AdminDashboard() {
           text-align: left;
           font-size: 13px;
         }
-
         .activity-feed {
           list-style: none;
           padding: 0;
@@ -276,7 +281,6 @@ export default function AdminDashboard() {
         .activity-feed li {
           margin-bottom: 6px;
         }
-
         .small-text {
           font-size: 13px;
           color: #6b7280;
@@ -290,7 +294,6 @@ export default function AdminDashboard() {
           color: #6b7280;
           margin-top: 6px;
         }
-
         @media (max-width: 1024px) {
           .summary-grid {
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -300,7 +303,6 @@ export default function AdminDashboard() {
             font-size: 12px;
           }
         }
-
         @media (max-width: 640px) {
           .summary-grid {
             grid-template-columns: 1fr;
