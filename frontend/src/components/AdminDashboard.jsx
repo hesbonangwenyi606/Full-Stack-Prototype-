@@ -99,13 +99,23 @@ export default function AdminDashboard() {
                 textAnchor="end"
                 height={60}
                 interval={0}
+                tickFormatter={(dateStr) => {
+                  const d = new Date(dateStr);
+                  return `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`;
+                }}
               />
               <YAxis
                 tick={{ fontSize: 12, fill: "#4b5563" }}
                 tickFormatter={(value) => value.toLocaleString()}
                 width={60}
               />
-              <Tooltip formatter={(value) => Number(value).toFixed(2)} />
+              <Tooltip 
+                formatter={(value) => Number(value).toFixed(2)} 
+                labelFormatter={(label) => {
+                  const d = new Date(label);
+                  return d.toLocaleDateString('default', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+                }}
+              />
               <Bar
                 dataKey="total"
                 fill="#60a5fa"
