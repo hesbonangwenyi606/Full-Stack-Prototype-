@@ -11,8 +11,6 @@ Structure:
 
 > Note: You will still need to record the required 2–5 minute video walkthrough yourself using this running prototype.
 
----
-
 ## Running the Backend
 
 ### 1. Create and activate a virtual environment (optional but recommended)
@@ -98,7 +96,6 @@ Admin endpoints:
 
 The admin view auto-refreshes every 5 seconds to make the demo more dynamic.
 
----
 
 ## Video Walkthrough (What to Record)
 
