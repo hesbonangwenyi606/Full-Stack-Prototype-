@@ -17,7 +17,7 @@ export default function UserDashboard() {
   const [loadingData, setLoadingData] = useState(false);
   const [error, setError] = useState("");
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [toast, setToast] = useState(null); // { message, type }
+  const [toasts, setToasts] = useState([]); // array of { id, message, type }
 
   const [newUserName, setNewUserName] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -52,10 +52,13 @@ export default function UserDashboard() {
     return () => clearInterval(intervalId);
   }, [activeUserId]);
 
-  // Show color-coded toast
-  const showToast = (message, type) => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+  // Toast helper
+  const addToast = (message, type) => {
+    const id = Date.now() + Math.random(); // unique id
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
   };
 
   async function handleCreateUser(e) {
@@ -69,7 +72,7 @@ export default function UserDashboard() {
       setActiveUserId(user.id);
       setNewUserName("");
       setNewUserEmail("");
-      showToast(`User "${user.name}" created successfully!`, "create");
+      addToast(`User "${user.name}" created successfully!`, "create");
     } catch (e) {
       setError(e?.message || "Failed to create user");
     } finally {
@@ -85,7 +88,7 @@ export default function UserDashboard() {
     try {
       await deposit(activeUserId, parseFloat(depositAmount), "User deposit");
       setDepositAmount("");
-      showToast(`Deposit successful!`, "deposit");
+      addToast(`Deposit successful!`, "deposit");
     } catch (e) {
       setError(e?.message || "Deposit failed");
     } finally {
@@ -107,7 +110,7 @@ export default function UserDashboard() {
       );
       setTransferAmount("");
       setTransferToUserId("");
-      showToast(`Transfer successful!`, "transfer");
+      addToast(`Transfer successful!`, "transfer");
     } catch (e) {
       setError(e?.message || "Transfer failed");
     } finally {
@@ -123,7 +126,7 @@ export default function UserDashboard() {
     try {
       await withdraw(activeUserId, parseFloat(withdrawAmount), "User withdrawal");
       setWithdrawAmount("");
-      showToast(`Withdrawal successful!`, "withdraw");
+      addToast(`Withdrawal successful!`, "withdraw");
     } catch (e) {
       setError(e?.message || "Withdrawal failed");
     } finally {
@@ -143,23 +146,26 @@ export default function UserDashboard() {
 
   const toastColor = (type) => {
     switch (type) {
-      case "deposit": return "#4ade80"; // green
-      case "transfer": return "#60a5fa"; // blue
-      case "withdraw": return "#f87171"; // red
-      case "create": return "#a78bfa"; // purple
+      case "deposit": return "#4ade80";
+      case "transfer": return "#60a5fa";
+      case "withdraw": return "#f87171";
+      case "create": return "#a78bfa";
       default: return "#333";
     }
   };
 
   return (
     <div className="layout-left">
-      {/* Toast notification */}
-      {toast && (
-        <div className="toast" style={{ backgroundColor: toastColor(toast.type) }}>
-          {toast.message}
-        </div>
-      )}
+      {/* Toast notifications */}
+      <div className="toast-container">
+        {toasts.map((t) => (
+          <div key={t.id} className="toast" style={{ backgroundColor: toastColor(t.type) }}>
+            {t.message}
+          </div>
+        ))}
+      </div>
 
+      {/* User selection / creation */}
       <div className="card">
         <h2>Select or Create User</h2>
         <div className="form-row">
@@ -199,6 +205,7 @@ export default function UserDashboard() {
         {error && <p style={{ color: "red", fontSize: 13 }}>{error}</p>}
       </div>
 
+      {/* Balance and actions */}
       {activeUserId && (
         <>
           <div className="card">
@@ -281,6 +288,7 @@ export default function UserDashboard() {
             </form>
           </div>
 
+          {/* Transactions */}
           <div className="card">
             <h2>Transaction History</h2>
             {loadingData ? (
@@ -330,57 +338,21 @@ export default function UserDashboard() {
 
       {/* CSS */}
       <style jsx>{`
-        .form-row {
-          display: flex;
-          gap: 8px;
-          margin-bottom: 8px;
-        }
-        .badge {
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: 500;
-          color: white;
-        }
+        .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 500; color: white; }
         .deposit { background-color: #4ade80; }
         .transfer { background-color: #60a5fa; }
         .withdraw { background-color: #f87171; }
-        .table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .table th,
-        .table td {
-          padding: 6px 8px;
-          border: 1px solid #ddd;
-          font-size: 13px;
-          text-align: left;
-        }
-        .spinner {
-          width: 16px;
-          height: 16px;
-          border: 3px solid #ccc;
-          border-top: 3px solid #333;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-          display: inline-block;
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        .toast {
-          position: fixed;
-          top: 16px;
-          right: 16px;
-          color: white;
-          padding: 10px 16px;
-          border-radius: 6px;
-          font-size: 14px;
-          opacity: 0.95;
-          z-index: 9999;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        }
+        .table { width: 100%; border-collapse: collapse; }
+        .table th, .table td { padding: 6px 8px; border: 1px solid #ddd; font-size: 13px; text-align: left; }
+        .spinner { width: 16px; height: 16px; border: 3px solid #ccc; border-top: 3px solid #333; border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Toast container */
+        .toast-container { position: fixed; top: 16px; right: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 9999; }
+        .toast { padding: 10px 16px; border-radius: 6px; color: white; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); transform: translateX(300px); opacity: 0; animation: slideIn 0.5s forwards, fadeOut 0.5s 2.5s forwards; }
+        @keyframes slideIn { to { transform: translateX(0); opacity: 0.95; } }
+        @keyframes fadeOut { to { transform: translateX(300px); opacity: 0; } }
       `}</style>
     </div>
   );
