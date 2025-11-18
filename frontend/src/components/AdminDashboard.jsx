@@ -6,7 +6,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
 } from "recharts";
 import { getSummary, getActivity } from "../api";
 
@@ -37,12 +37,16 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    load();
-    const interval = setInterval(load, 5000);
-    return () => clearInterval(interval);
+    let mounted = true;
+    const fetchData = async () => {
+      await load();
+      if (mounted) setTimeout(fetchData, 5000);
+    };
+    fetchData();
+    return () => { mounted = false; };
   }, []);
 
-  function typeBadge(type) {
+  const typeBadge = (type) => {
     const klass =
       type === "DEPOSIT"
         ? "badge deposit"
@@ -50,9 +54,9 @@ export default function AdminDashboard() {
         ? "badge transfer"
         : "badge withdraw";
     return <span className={klass}>{type}</span>;
-  }
+  };
 
-  function statusBadge(status) {
+  const statusBadge = (status) => {
     const klass =
       status.toLowerCase() === "completed"
         ? "badge completed"
@@ -60,7 +64,7 @@ export default function AdminDashboard() {
         ? "badge pending"
         : "badge failed";
     return <span className={klass}>{status}</span>;
-  }
+  };
 
   const recentActivity = useMemo(() => {
     return [...activity]
@@ -68,13 +72,12 @@ export default function AdminDashboard() {
       .slice(0, 10);
   }, [activity]);
 
-  // Prepare bar chart data: sum transactions by date
   const chartData = useMemo(() => {
     const map = {};
-    activity.forEach(t => {
-      const date = new Date(t.created_at).toLocaleDateString();
+    activity.forEach((t) => {
+      const date = new Date(t.created_at).toISOString().split("T")[0];
       if (!map[date]) map[date] = 0;
-      map[date] += Number(t.amount); // ensure numeric
+      map[date] += Number(t.amount);
     });
     return Object.entries(map)
       .map(([date, total]) => ({ date, total }))
@@ -92,17 +95,14 @@ export default function AdminDashboard() {
           <p className="small-text">No transaction data to display.</p>
         ) : (
           <ResponsiveContainer width="100%" height={250}>
-            <BarChart
-              data={chartData}
-              margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
-            >
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 50 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 dataKey="date"
                 tick={{ fontSize: 12, fill: "#4b5563" }}
-                angle={-20}
+                angle={-45}
                 textAnchor="end"
-                height={50}
+                height={60}
               />
               <YAxis
                 tick={{ fontSize: 12, fill: "#4b5563" }}
@@ -185,7 +185,9 @@ export default function AdminDashboard() {
             </table>
           </div>
         )}
-        {lastUpdated && <p className="last-updated">Last updated: {lastUpdated.toLocaleTimeString()}</p>}
+        {lastUpdated && (
+          <p className="last-updated">Last updated: {lastUpdated.toLocaleTimeString()}</p>
+        )}
       </div>
 
       {/* Recent Activity Feed */}
@@ -200,8 +202,8 @@ export default function AdminDashboard() {
             {recentActivity.map((t) => (
               <li key={t.id}>
                 <strong>#{t.id}</strong> {t.type.toLowerCase()} of{" "}
-                {Number(t.amount).toFixed(2)} from {t.from_user_id || "-"} to {t.to_user_id || "-"} at{" "}
-                {new Date(t.created_at).toLocaleTimeString()}
+                {Number(t.amount).toFixed(2)} from {t.from_user_id || "-"} to{" "}
+                {t.to_user_id || "-"} at {new Date(t.created_at).toLocaleTimeString()}
               </li>
             ))}
           </ul>
@@ -212,7 +214,7 @@ export default function AdminDashboard() {
       <style jsx>{`
         .summary-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
           gap: 16px;
         }
         .summary-item .label {
@@ -231,31 +233,89 @@ export default function AdminDashboard() {
           font-weight: 500;
           color: white;
         }
-        .deposit { background-color: #4ade80; }
-        .transfer { background-color: #60a5fa; }
-        .withdraw { background-color: #f87171; }
-        .completed { background-color: #4ade80; }
-        .pending { background-color: #facc15; }
-        .failed { background-color: #f87171; }
+        .deposit {
+          background-color: #4ade80;
+        }
+        .transfer {
+          background-color: #60a5fa;
+        }
+        .withdraw {
+          background-color: #f87171;
+        }
+        .completed {
+          background-color: #4ade80;
+        }
+        .pending {
+          background-color: #facc15;
+        }
+        .failed {
+          background-color: #f87171;
+        }
 
-        .table-wrapper { overflow-x: auto; }
-        .table { width: 100%; border-collapse: collapse; }
-        .table th, .table td {
+        .table-wrapper {
+          overflow-x: auto;
+        }
+        .table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .table th,
+        .table td {
           padding: 8px;
           border-bottom: 1px solid #e5e7eb;
           text-align: left;
           font-size: 13px;
         }
 
-        .activity-feed { list-style: none; padding: 0; margin: 0; font-size: 13px; }
-        .activity-feed li { margin-bottom: 6px; }
-        .small-text { font-size: 13px; color: #6b7280; }
-        .error-text { color: #ef4444; font-size: 13px; }
-        .last-updated { font-size: 12px; color: #6b7280; margin-top: 6px; }
+        .activity-feed {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+          font-size: 13px;
+        }
+        .activity-feed li {
+          margin-bottom: 6px;
+        }
 
-        @media (max-width: 768px) {
-          .summary-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
-          .table th, .table td { font-size: 12px; }
+        .small-text {
+          font-size: 13px;
+          color: #6b7280;
+        }
+        .error-text {
+          color: #ef4444;
+          font-size: 13px;
+        }
+        .last-updated {
+          font-size: 12px;
+          color: #6b7280;
+          margin-top: 6px;
+        }
+
+        @media (max-width: 1024px) {
+          .summary-grid {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+          }
+          .table th,
+          .table td {
+            font-size: 12px;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .summary-grid {
+            grid-template-columns: 1fr;
+          }
+          .table th,
+          .table td {
+            font-size: 11px;
+            padding: 6px;
+          }
+          .activity-feed {
+            font-size: 12px;
+          }
+          .card h2 {
+            font-size: 16px;
+          }
         }
       `}</style>
     </div>
